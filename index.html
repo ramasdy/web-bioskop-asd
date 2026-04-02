@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bioskop Infinity</title>
+  <style>
+    body {
+      font-family: monospace, 'Times New Roman';
+      background-color: #f0f0f0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    .kotak {
+      background-color: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #555;
+      font-size: 16px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      padding: 6px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    button {
+      padding: 6px 14px;
+      font-size: 14px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+
+    #daftarAntrean {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0;
+    }
+
+    #daftarAntrean li {
+      padding: 6px 10px;
+      background: #eaf4fb;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    #daftarAntrean li.aktif {
+      background-color: #3498db;
+      color: white;
+      font-weight: bold;
+    }
+
+    #pesanStatus {
+      color: green;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    #riwayatList {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0;
+    }
+
+    #riwayatList li {
+      padding: 8px 10px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .label {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .baris {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    #totalHarga {
+      font-size: 15px;
+      font-weight: bold;
+      color: #27ae60;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎬 Bioskop Infinity</h1>
+
+  <div class="kotak">
+    <h2>Antrean</h2>
+    <div class="baris">
+      <input type="text" id="namaInput" placeholder="Masukkan nama..." />
+      <button onclick="ambilAntrean()">Ambil Nomor</button>
+    </div>
+    <ul id="daftarAntrean">
+      <li style="color:#aaa;">Belum ada antrean.</li>
+    </ul>
+    <p id="pesanStatus"></p>
+  </div>
+
+  <div class="kotak">
+    <h2>Proses Pelanggan</h2>
+
+    <div class="label">Pilih Film:</div>
+    <div class="baris">
+      <select id="pilihFilm">
+        <option value="">-- Pilih Film --</option>
+        <option>Sepatu Super The Movie</option>
+        <option>Ronaldowati Legacy</option>
+        <option>Merah Putih Remake</option>
+      </select>
+    </div>
+
+    <div class="label">Pilih Jadwal:</div>
+    <div class="baris">
+      <select id="pilihJadwal">
+        <option value="">-- Pilih Jadwal --</option>
+        <option>13.00</option>
+        <option>15.00</option>
+        <option>17.00</option>
+        <option>19.00</option>
+        <option>21.00</option>
+      </select>
+    </div>
+
+    <div class="label">Jumlah Tiket:</div>
+    <div class="baris">
+      <input type="number" id="jumlahTiket" value="1" min="1" style="width:60px;" oninput="updateTotal()" />
+      <span id="totalHarga">Total: Rp 50.000</span>
+    </div>
+
+    <button onclick="selesaikan()">✓ Selesaikan Transaksi</button>
+  </div>
+
+  <div class="kotak">
+    <h2>Riwayat Transaksi</h2>
+    <div class="baris">
+      <select id="filterRiwayat" onchange="tampilRiwayat()">
+        <option value="semua">Tampilkan Semua</option>
+        <option value="terakhir">Tampilkan Transaksi Terakhir</option>
+      </select>
+    </div>
+    <ul id="riwayatList">
+      <li style="color:#aaa;">Belum ada riwayat.</li>
+    </ul>
+  </div>
+
+  <script>
+    const HARGA_TIKET = 50000;
+
+    class NodeQueue {
+      constructor(nomor, nama) {
+        this.nomor = nomor;
+        this.nama = nama;
+        this.next = null; 
+      }
+    }
+
+    let front = null;
+    let rear = null;
+    let counterAntrean = 1;
+
+    function enqueue(nama) {
+      let baru = new NodeQueue(counterAntrean, nama);
+      counterAntrean++;
+      
+      if (front === null) {
+        front = baru;
+      } else {
+        rear.next = baru;
+      }
+      rear = baru;
+    }
+
+    function dequeue() {
+      if (front === null) {
+        console.log("Antrean kosong");
+      } else {
+        front = front.next;
+      }
+    }
+
+    class NodeStack {
+      constructor(nama, film, jumlah_tiket, jadwal) {
+        this.nama = nama;
+        this.film = film;
+        this.jumlah_tiket = jumlah_tiket;
+        this.jadwal = jadwal;
+        this.waktu = new Date().toLocaleString('id-ID'); 
+        this.next = null; 
+      }
+    }
+
+    let topNode = null; 
+
+    function pushStack(nama, film, jumlah_tiket, jadwal) {
+      let baru = new NodeStack(nama, film, jumlah_tiket, jadwal);
+      baru.next = topNode;
+      topNode = baru;
+    }
+
+    function fmt(n) {
+      return 'Rp ' + n.toLocaleString('id-ID');
+    }
+
+    function tampilAntrean() {
+      const ul = document.getElementById('daftarAntrean');
+      if (front === null) {
+        ul.innerHTML = '<li style="color:#aaa;">Belum ada antrean.</li>';
+        return;
+      }
+
+      let html = '';
+      let ptr = front;
+      let index = 0;
+      
+      while (ptr !== null) {
+        html += `<li class="${index === 0 ? 'aktif' : ''}">[${ptr.nomor}] ${ptr.nama} ${index === 0 ? '← giliran sekarang' : ''}</li>`;
+        ptr = ptr.next;
+        index++;
+      }
+      ul.innerHTML = html;
+    }
+
+    function tampilRiwayat() {
+      const ul = document.getElementById('riwayatList');
+      if (topNode === null) {
+        ul.innerHTML = '<li style="color:#aaa;">Belum ada riwayat.</li>';
+        return;
+      }
+
+      const filter = document.getElementById('filterRiwayat').value;
+      let html = '';
+      
+      let total = 0;
+      let tmp = topNode;
+      while (tmp !== null) { 
+        total++; 
+        tmp = tmp.next; 
+      }
+      let no = total;
+
+      let ptr = topNode;
+
+      while (ptr !== null) {
+        html += `<li>
+          <b>#[${no}] — ${ptr.nama}</b><br>
+          Film: ${ptr.film}<br>
+          Jadwal: ${ptr.jadwal}<br>
+          Tiket: ${ptr.jumlah_tiket} | Total: ${fmt(HARGA_TIKET * ptr.jumlah_tiket)}<br>
+          <small style="color:#888;">Waktu: ${ptr.waktu}</small>
+        </li>`;
+        
+        if (filter === 'terakhir') {
+          break; 
+        }
+        
+        ptr = ptr.next;
+        no--;
+      }
+      ul.innerHTML = html;
+    }
+
+    function ambilAntrean() {
+      const input = document.getElementById('namaInput');
+      const nama = input.value.trim();
+      const pesan = document.getElementById('pesanStatus');
+
+      if (!nama) {
+        pesan.textContent = 'Nama tidak boleh kosong!';
+        pesan.style.color = 'red';
+        return;
+      }
+
+      enqueue(nama); 
+      input.value = '';
+      pesan.textContent = `Nomor [${counterAntrean - 1}] berhasil diambil untuk ${nama}.`;
+      pesan.style.color = 'green';
+      tampilAntrean();
+    }
+
+    function updateTotal() {
+      const tiket = parseInt(document.getElementById('jumlahTiket').value) || 1;
+      document.getElementById('totalHarga').textContent = 'Total: ' + fmt(HARGA_TIKET * tiket);
+    }
+
+    function selesaikan() {
+      if (front === null) {
+        alert('Antrean kosong!');
+        return;
+      }
+
+      const film = document.getElementById('pilihFilm').value;
+      const jadwal = document.getElementById('pilihJadwal').value;
+      const tiket = parseInt(document.getElementById('jumlahTiket').value) || 1;
+
+      if (!film) { alert('Pilih film dulu!'); return; }
+      if (!jadwal) { alert('Pilih jadwal dulu!'); return; }
+
+      const namaPelanggan = front.nama;
+
+      // Masukkan transaksi ke Stack Riwayat
+      pushStack(namaPelanggan, film, tiket, jadwal);
+
+      dequeue();
+
+      alert(`Transaksi selesai!\n\nNama     : ${namaPelanggan}\nFilm    : ${film}\nJadwal     : ${jadwal}\nTiket     : ${tiket}\nTotal     : ${fmt(HARGA_TIKET * tiket)}\n\nSelamat menonton! 🎉`);
+
+      document.getElementById('pilihFilm').value = '';
+      document.getElementById('pilihJadwal').value = '';
+      document.getElementById('jumlahTiket').value = 1;
+      document.getElementById('totalHarga').textContent = 'Total: Rp 50.000';
+
+      tampilAntrean();
+      tampilRiwayat();
+    }
+
+    document.getElementById('namaInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') ambilAntrean();
+    });
+  </script>
+
+</body>
+</html>
